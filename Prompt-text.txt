@@ -1,9 +1,9 @@
-@workspace The data in my generated HTML dashboard is wrong. The "Autonomously Upgraded & Remediated" table is showing all the transitive and unfixable dependencies, which means the wrong lists are being passed to `HtmlReportGenerator.generateOfflineDashboard()`.
+@workspace My `HtmlReportGenerator.generateOfflineDashboard()` didn't run in the last execution. I need to guarantee it executes at the absolute end of the scanning process, regardless of early returns or Maven clean phases.
 
-1. Go to the method where `HtmlReportGenerator.generateOfflineDashboard()` is called.
-2. Check the two list arguments being passed into it. 
-3. The FIRST list argument must ONLY contain the dependencies that were successfully bumped in the pom.xml or successfully processed by OpenRewrite.
-4. The SECOND list argument must contain the "leftovers" (the transitive dependencies, the false positives, or the ones that failed to update).
-5. Fix the variable references being passed into the method so the tables render correctly.
+1. Find the main MCP scanning method (the one that returns the final string to the AI agent).
+2. Wrap the core scanning, filtering, and remediation logic inside a `try { ... }` block.
+3. Add a `finally { ... }` block at the very end of the method.
+4. Move the `HtmlReportGenerator.generateOfflineDashboard(...)` call INSIDE the `finally` block. 
+5. Ensure the variables passed to the generator (the projectName, the successfully fixed list, and the manual review list) are declared outside/above the `try` block so they are accessible in the `finally` block.
 
-Show me the corrected method call.
+Show me the updated orchestration method with the try-finally structure.
