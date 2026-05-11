@@ -1,9 +1,8 @@
-@workspace My `HtmlReportGenerator.generateOfflineDashboard()` didn't run in the last execution. I need to guarantee it executes at the absolute end of the scanning process, regardless of early returns or Maven clean phases.
+@workspace My HTML dashboard is being deleted by Maven's `clean` phase because it is being generated inside the `target/` directory. I need to move it to the root of the scanned project.
 
-1. Find the main MCP scanning method (the one that returns the final string to the AI agent).
-2. Wrap the core scanning, filtering, and remediation logic inside a `try { ... }` block.
-3. Add a `finally { ... }` block at the very end of the method.
-4. Move the `HtmlReportGenerator.generateOfflineDashboard(...)` call INSIDE the `finally` block. 
-5. Ensure the variables passed to the generator (the projectName, the successfully fixed list, and the manual review list) are declared outside/above the `try` block so they are accessible in the `finally` block.
+1. Find the main orchestration method where `HtmlReportGenerator.generateOfflineDashboard()` is called.
+2. Look at the `outputPath` argument being passed to it.
+3. Change the output path so it no longer includes `/target/`. It should resolve directly to the root of the project path. For example, if you were doing `projectPath + "/target/vulnerability-dashboard.html"`, change it to `projectPath + "/vulnerability-dashboard.html"`.
+4. Update the console log message to reflect that the file is now saved in the project root.
 
-Show me the updated orchestration method with the try-finally structure.
+Show me the updated method call.
