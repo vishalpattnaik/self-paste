@@ -1,11 +1,9 @@
-@workspace I have added the `HtmlReportGenerator` class to my project. I now need to call its `generateOfflineDashboard` method at the very end of my vulnerability scanning process.
+@workspace The data in my generated HTML dashboard is wrong. The "Autonomously Upgraded & Remediated" table is showing all the transitive and unfixable dependencies, which means the wrong lists are being passed to `HtmlReportGenerator.generateOfflineDashboard()`.
 
-1. Locate my main orchestration method that executes the MCP vulnerability scan (this is the method that compiles the final text report and returns it to the Copilot agent, likely in `McpServerConfiguration` or `ScanningService`).
-2. Right before that method returns its final string response, inject the logic to call `HtmlReportGenerator.generateOfflineDashboard()`.
-3. For the `projectName` argument, pass "service" (or dynamically extract the artifactId from the scanned pom.xml if available).
-4. For the `remediatedDeps` argument, pass the list of dependencies that were successfully auto-upgraded or had OpenRewrite recipes applied during this run.
-5. For the `manualReviewDeps` argument, pass the list of vulnerable dependencies that could not be auto-remediated (e.g., transitive dependencies or those lacking a recipe).
-6. Set the `outputPath` argument to "target/vulnerability-dashboard.html" (relative to the scanned project's directory).
-7. Append a short sentence to the final string returned by the method: "\n[INFO] A detailed offline HTML dashboard has been generated at target/vulnerability-dashboard.html".
+1. Go to the method where `HtmlReportGenerator.generateOfflineDashboard()` is called.
+2. Check the two list arguments being passed into it. 
+3. The FIRST list argument must ONLY contain the dependencies that were successfully bumped in the pom.xml or successfully processed by OpenRewrite.
+4. The SECOND list argument must contain the "leftovers" (the transitive dependencies, the false positives, or the ones that failed to update).
+5. Fix the variable references being passed into the method so the tables render correctly.
 
-Show me the updated orchestration method so I can review the injection point.
+Show me the corrected method call.
