@@ -1,8 +1,32 @@
-@workspace My HTML dashboard is being deleted by Maven's `clean` phase because it is being generated inside the `target/` directory. I need to move it to the root of the scanned project.
+@workspace Add a new utility method to this class called `findNexusReport`. It must take a `String projectDirectory` as an argument. 
+Goal: Search the `src/main/resources` folder inside the `projectDirectory` for any file whose name starts with "nexus" and ends with ".json" (case-insensitive). 
+Rules:
+1. Return an `Optional<Path>`.
+2. It must not throw an exception or crash if the `src/main/resources` directory does not exist. Return `Optional.empty()` instead.
+3. Keep it simple and use standard `java.nio.file.Files` methods.
+=============
 
-1. Find the main orchestration method where `HtmlReportGenerator.generateOfflineDashboard()` is called.
-2. Look at the `outputPath` argument being passed to it.
-3. Change the output path so it no longer includes `/target/`. It should resolve directly to the root of the project path. For example, if you were doing `projectPath + "/target/vulnerability-dashboard.html"`, change it to `projectPath + "/vulnerability-dashboard.html"`.
-4. Update the console log message to reflect that the file is now saved in the project root.
+@workspace I need to create a brand new standalone MCP tool. 
+Goal: Create a method named `parseNexusVulnerabilityReport` that takes a `String targetFilePath`.
+Rules:
+1. Annotate it with `@Tool` and provide a detailed description stating: "Parses a Nexus vulnerability scan report. Returns a formatted list of vulnerable dependencies."
+2. Read the contents of the file at `targetFilePath` into a String.
+3. For now, just return a success message appending the raw file contents (or parse it if you see my existing JSON DTOs in the workspace).
+4. Wrap the file reading logic in a try-catch and return the error message as a String if it fails. Do not crash the server.
+==========
 
-Show me the updated method call.
+@workspace Look at my highlighted orchestration method. I need to conditionally alter the prompt sent to the agent.
+Goal: Call the `findNexusReport(projectDirectory)` method right before the prompt string is finalized.
+Rules:
+1. If the `Optional` contains a file path, append a STRICT DIRECTIVE to the LLM prompt. Tell the LLM: "A Nexus report was found at [Absolute Path]. You MUST use the `parseNexusVulnerabilityReport` tool on this file. Do NOT use the standard POM scanner."
+2. If the `Optional` is empty, keep the existing logic exactly as it is (fallback to the standard offline NVD scan).
+3. Surgical changes only: Do not rewrite the rest of the orchestration method.
+==========
+
+@workspace Look at my highlighted orchestration method. I need to conditionally alter the prompt sent to the agent.
+Goal: Call the `findNexusReport(projectDirectory)` method right before the prompt string is finalized.
+Rules:
+1. If the `Optional` contains a file path, append a STRICT DIRECTIVE to the LLM prompt. Tell the LLM: "A Nexus report was found at [Absolute Path]. You MUST use the `parseNexusVulnerabilityReport` tool on this file. Do NOT use the standard POM scanner."
+2. If the `Optional` is empty, keep the existing logic exactly as it is (fallback to the standard offline NVD scan).
+3. Surgical changes only: Do not rewrite the rest of the orchestration method.
+
