@@ -1,32 +1,81 @@
-@workspace Add a new utility method to this class called `findNexusReport`. It must take a `String projectDirectory` as an argument. 
-Goal: Search the `src/main/resources` folder inside the `projectDirectory` for any file whose name starts with "nexus" and ends with ".json" (case-insensitive). 
-Rules:
-1. Return an `Optional<Path>`.
-2. It must not throw an exception or crash if the `src/main/resources` directory does not exist. Return `Optional.empty()` instead.
-3. Keep it simple and use standard `java.nio.file.Files` methods.
-=============
+# Project Architecture & Tech Stack
 
-@workspace I need to create a brand new standalone MCP tool. 
-Goal: Create a method named `parseNexusVulnerabilityReport` that takes a `String targetFilePath`.
-Rules:
-1. Annotate it with `@Tool` and provide a detailed description stating: "Parses a Nexus vulnerability scan report. Returns a formatted list of vulnerable dependencies."
-2. Read the contents of the file at `targetFilePath` into a String.
-3. For now, just return a success message appending the raw file contents (or parse it if you see my existing JSON DTOs in the workspace).
-4. Wrap the file reading logic in a try-catch and return the error message as a String if it fails. Do not crash the server.
-==========
+Whenever I ask you to "scan project", "scan dependencies", or "run security check", you MUST follow this strict order of operations:
 
-@workspace Look at my highlighted orchestration method. I need to conditionally alter the prompt sent to the agent.
-Goal: Call the `findNexusReport(projectDirectory)` method right before the prompt string is finalized.
-Rules:
-1. If the `Optional` contains a file path, append a STRICT DIRECTIVE to the LLM prompt. Tell the LLM: "A Nexus report was found at [Absolute Path]. You MUST use the `parseNexusVulnerabilityReport` tool on this file. Do NOT use the standard POM scanner."
-2. If the `Optional` is empty, keep the existing logic exactly as it is (fallback to the standard offline NVD scan).
-3. Surgical changes only: Do not rewrite the rest of the orchestration method.
-==========
+**Step 1: Check for Enterprise Report (Nexus)**
+- Search the workspace for any file matching `nexus*.json` (usually in `src/main/resources` or `target/`).
+- **IF FOUND:** Execute the `parseNexusVulnerabilityReport` tool passing this file path. DO NOT look for an SBOM. Proceed directly to mapping the vulnerabilities.
+- **IF NOT FOUND:** Proceed to Step 2.
 
-@workspace Look at my highlighted orchestration method. I need to conditionally alter the prompt sent to the agent.
-Goal: Call the `findNexusReport(projectDirectory)` method right before the prompt string is finalized.
-Rules:
-1. If the `Optional` contains a file path, append a STRICT DIRECTIVE to the LLM prompt. Tell the LLM: "A Nexus report was found at [Absolute Path]. You MUST use the `parseNexusVulnerabilityReport` tool on this file. Do NOT use the standard POM scanner."
-2. If the `Optional` is empty, keep the existing logic exactly as it is (fallback to the standard offline NVD scan).
-3. Surgical changes only: Do not rewrite the rest of the orchestration method.
+**Step 2: Fallback to Standard Scan (SBOM)**
+- Automatically locate the SBOM at `target/bom.json`.
+- If `target/bom.json` does not exist, generate it first using the appropriate Maven command.
+- Execute the `scanSbomFile` tool.
 
+Once the vulnerabilities are identified (via Nexus OR the SBOM), you must execute the following pipeline:
+1. Read the provided CSV file (which contains columns: `order`, `artifact-name`, `current-version`, `recipe`).
+2. Read the `pom.xml` and the parsed vulnerabilities to understand the project's current dependencies.
+3. Cross-reference the project's vulnerable dependencies against the CSV file.
+
+You must present your response in exactly TWO distinct sections, strictly in this order:
+
+### Section 1: Autonomous Minor Upgrades (No Recipe Available)
+1. **CRITICAL FILTERING RULE (NO FALSE POSITIVES):** Analyze the vulnerability descriptions for the dependencies that do not have a CSV recipe. You MUST silently ignore and drop any obvious false positives or misattributions (e.g., PHP/C++ vulnerabilities mapped to Java libraries, or Jenkins plugin CVEs mapped to the base JUnit library). Do not list them.
+2. **DEPENDENCY TRIAGE RULE:** For the remaining vulnerabilities lacking a CSV recipe, categorize them by checking the project's `pom.xml`:
+   - **Direct:** The dependency is explicitly written in the `pom.xml`.
+   - **Transitive:** The dependency is NOT explicitly written in the `pom.xml`.
+3. **For Direct Dependencies (Fully Autonomous):**
+   - Extract the `groupId:artifactId`, join into a comma-separated string, and call the `autoBumpDependencies` tool.
+   - Present a table titled **"Autonomously Upgraded (Direct)"** showing `Dependency`, `Original Version`, `New Version`, and `CVEs`.
+4. **For All Transitive Dependencies (Manual Action Required):**
+   - DO NOT attempt to autonomously pin or upgrade these.
+   - Present a table titled **"Requires Manual Review (Transitive)"** showing `Dependency`, `Current Version`, and `CVEs`.
+   - Add this note below the table: *"These are transitive dependencies. Best practice is to upgrade the parent framework first. If the parent patch is unavailable, manually add a `<dependencyManagement>` or `<properties>` override to your pom.xml."*
+
+### Section 2: Automated Migration Plan
+1. If any vulnerable dependencies map to a recipe in CSV, gather the recipe names.
+2. Join all the matched recipe names into a single comma-separated string.
+3. Call the `runOpenRewriteRecipes` tool. **You MUST pass the absolute file path of the current VS Code workspace as the `projectDirectory` parameter.**
+4. DO NOT provide terminal commands for the user to run.
+5. Present a table titled **"Executed Openrewrite Migrations"** showing `Order`, `Dependency`, `Current Version`, and `Recipe`.
+6. **CRITICAL:** Read the output from the `runOpenRewriteRecipes` tool. Add a status indicator below the table that explicitly states whether the subsequent mvn clean install resulted in a BUILD SUCCESS or BUILD FAILURE. Do not print the raw Maven logs unless the build failed and you need to explain the compilation error.
+
+------------
+
+# Behavioral Guidelines (Karpathy Rules)
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
+
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+
+## 1. Think Before Coding
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+## 2. Simplicity First
+**Minimum code that solves the problem.**
+- Nothing speculative. No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+
+## 3. Surgical Changes
+**Touch only what you must. Clean up only your own mess.**
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+## 4. Goal-Driven Execution
+**Define success criteria. Loop until verified.**
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
