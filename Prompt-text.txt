@@ -17,7 +17,7 @@ Once the vulnerabilities are identified (via Nexus OR the SBOM), you must execut
 2. Read the `pom.xml` and the parsed vulnerabilities to understand the project's current dependencies.
 3. Cross-reference the project's vulnerable dependencies against the CSV file.
 
-You must present your response in exactly TWO distinct sections, strictly in this order:
+You must present your response in exactly THREE distinct sections, strictly in this order:
 
 ### Section 1: Autonomous Minor Upgrades (No Recipe Available)
 1. **CRITICAL FILTERING RULE (NO FALSE POSITIVES):** Analyze the vulnerability descriptions for the dependencies that do not have a CSV recipe. You MUST silently ignore and drop any obvious false positives or misattributions (e.g., PHP/C++ vulnerabilities mapped to Java libraries, or Jenkins plugin CVEs mapped to the base JUnit library). Do not list them.
@@ -38,7 +38,11 @@ You must present your response in exactly TWO distinct sections, strictly in thi
 3. Call the `runOpenRewriteRecipes` tool. **You MUST pass the absolute file path of the current VS Code workspace as the `projectDirectory` parameter.**
 4. DO NOT provide terminal commands for the user to run.
 5. Present a table titled **"Executed Openrewrite Migrations"** showing `Order`, `Dependency`, `Current Version`, and `Recipe`.
-6. **CRITICAL:** Read the output from the `runOpenRewriteRecipes` tool. Add a status indicator below the table that explicitly states whether the subsequent mvn clean install resulted in a BUILD SUCCESS or BUILD FAILURE. Do not print the raw Maven logs unless the build failed and you need to explain the compilation error.
+
+### Section 3: Final Build Verification
+1. **CRITICAL MANDATORY STEP:** Regardless of whether any dependencies were upgraded or migrations were executed, you MUST run a final verification build on the workspace using Maven (e.g., `mvn clean compile` or `mvn clean test`). 
+2. Present a status indicator explicitly stating **BUILD SUCCESS** 🟢 or **BUILD FAILURE** 🔴.
+3. If the build failed, provide a brief, human-readable summary of the compilation or dependency resolution errors. Do not print the raw, unfiltered Maven logs.
 
 ------------
 
