@@ -1,6 +1,13 @@
-**Step 2: Fallback to Standard Scan (SBOM)**
-- Automatically locate the SBOM at `target/bom.json`.
-- If `target/bom.json` does not exist, you MUST generate it by running the following exact command in the terminal:
-  `mvn org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom -DprojectType=library -DschemaVersion=1.6 -DincludeBomSerialNumber=true -DincludeCompileScope=true -DincludeProvidedScope=true -DincludeRuntimeScope=true -DincludeSystemScope=true -DincludeTestScope=false -DoutputFormat=json`
-- Wait for the Maven build to finish successfully.
-- Execute the `scanSbomFile` tool.
+Fix the `generateExcelReport` tool's column sizing logic.
+Goal: Prevent the Apache POI 255-character column width crash.
+Rules:
+1. Wherever you are calculating the column width or using `autoSizeColumn`, add a strict mathematical cap.
+2. The width must never exceed 255 (or whatever unit POI requires, usually `Math.min(calculatedWidth, 255)`). 
+3. Ensure any null values from the JSON parsing are handled gracefully as empty strings `""` before measuring their length.
+
+
+
+2. Convert the data from your Section 1 and Section 2 tables into three valid JSON arrays.
+3. **CRITICAL JSON SCHEMA RULE:** You MUST format the JSON arrays using strict camelCase keys, regardless of the markdown headers. 
+   - Use exactly these keys: `dependency`, `currentVersion`, `originalVersion`, `newVersion`, `cves`, `order`, `recipe`. DO NOT use spaces or PascalCase in the JSON keys.
+4. Pass these JSON arrays as arguments, and pass the absolute file path of the current VS Code workspace as the `targetDirectory` parameter.
