@@ -1,17 +1,14 @@
-@workspace Add a new `@Tool` named `generateExcelReport`. 
-Goal: Generate a styled Excel file using Apache POI.
+@workspace Update the `generateExcelReport` tool. 
+Goal: Save the Excel file in the target project's directory instead of the server's working directory.
 Rules:
-1. The method should accept three String parameters representing JSON arrays: `directUpgradesJson`, `manualReviewJson`, and `migrationsJson`.
-2. Use Jackson or Gson to parse these JSON strings into Lists of Maps (or appropriate DTOs).
-3. Create an Excel workbook with three sheets: "Direct Upgrades", "Manual Review", and "Migrations".
-4. Write the parsed data into their respective sheets.
-5. Style the header row (row 1) of each sheet with a bold font and a background color. Auto-size the columns.
-6. Save the file as `remediation-report.xlsx` in the root of the project directory and return a success string with the absolute file path.
+1. Add a new String parameter called `targetDirectory` to the method signature.
+2. Update the file saving logic to construct an absolute path using this directory (e.g., `Paths.get(targetDirectory, "remediation-report.xlsx")`).
+3. Keep all the existing Excel generation and styling logic exactly the same.
 
 
 
 ### Section 4: Excel Report Generation
 1. **CRITICAL MANDATORY STEP:** After you have printed all the markdown tables in the chat and completed the build verification, you MUST call the `generateExcelReport` tool.
 2. Convert the data from your Section 1 and Section 2 tables into three valid JSON arrays.
-3. Pass these JSON arrays as the arguments to the `generateExcelReport` tool.
+3. Pass these JSON arrays as arguments. **You MUST also pass the absolute file path of the current VS Code workspace as the `targetDirectory` parameter.**
 4. Once the tool succeeds, print a final confirmation message in the chat: *"Excel report successfully generated at [File Path]"*.
