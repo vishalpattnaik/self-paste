@@ -1,14 +1,6 @@
-@workspace Update the `generateExcelReport` tool. 
-Goal: Save the Excel file in the target project's directory instead of the server's working directory.
-Rules:
-1. Add a new String parameter called `targetDirectory` to the method signature.
-2. Update the file saving logic to construct an absolute path using this directory (e.g., `Paths.get(targetDirectory, "remediation-report.xlsx")`).
-3. Keep all the existing Excel generation and styling logic exactly the same.
-
-
-
-### Section 4: Excel Report Generation
-1. **CRITICAL MANDATORY STEP:** After you have printed all the markdown tables in the chat and completed the build verification, you MUST call the `generateExcelReport` tool.
-2. Convert the data from your Section 1 and Section 2 tables into three valid JSON arrays.
-3. Pass these JSON arrays as arguments. **You MUST also pass the absolute file path of the current VS Code workspace as the `targetDirectory` parameter.**
-4. Once the tool succeeds, print a final confirmation message in the chat: *"Excel report successfully generated at [File Path]"*.
+**Step 2: Fallback to Standard Scan (SBOM)**
+- Automatically locate the SBOM at `target/bom.json`.
+- If `target/bom.json` does not exist, you MUST generate it by running the following exact command in the terminal:
+  `mvn org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom -DprojectType=library -DschemaVersion=1.6 -DincludeBomSerialNumber=true -DincludeCompileScope=true -DincludeProvidedScope=true -DincludeRuntimeScope=true -DincludeSystemScope=true -DincludeTestScope=false -DoutputFormat=json`
+- Wait for the Maven build to finish successfully.
+- Execute the `scanSbomFile` tool.
