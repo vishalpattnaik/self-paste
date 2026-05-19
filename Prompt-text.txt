@@ -1,11 +1,7 @@
-@workspace Look at my highlighted Java method. It currently executes a Maven build using `clean install`.
-Goal: Change the Maven execution to use `clean test` and make it run much faster so it doesn't time out.
+ I want to include the name of the service in the generated Excel file's name.
+Goal: Extract the folder name from the `targetDirectory` and prepend it to the Excel filename.
 Rules:
-1. Replace the "install" argument with "test".
-2. Add the argument "-T" followed by "1C" to enable parallel thread execution.
-3. Add the argument "-Dsurefire.skipAfterFailureCount=1" to make the test suite fail fast.
-4. Ensure the `ProcessBuilder` (or execution logic) correctly separates these arguments.
-5. Keep all existing error handling, output stream reading, and working directory logic exactly the same.
-
-
-
+1. Parse the `targetDirectory` string to get just the final folder name (e.g., if the path is `/some/path/my-service`, extract "my-service"). You can use `Paths.get(targetDirectory).getFileName().toString()`.
+2. Construct the new file name using that folder name (e.g., `String fileName = folderName + "-remediation-report.xlsx";`).
+3. If you previously added a timestamp to the file name, keep the timestamp, just add the folder name to the front.
+4. Keep all existing Excel generation logic exactly the same.
