@@ -1,13 +1,11 @@
-Fix the `generateExcelReport` tool's column sizing logic.
-Goal: Prevent the Apache POI 255-character column width crash.
+@workspace Look at my highlighted Java method. It currently executes a Maven build using `clean install`.
+Goal: Change the Maven execution to use `clean test` and make it run much faster so it doesn't time out.
 Rules:
-1. Wherever you are calculating the column width or using `autoSizeColumn`, add a strict mathematical cap.
-2. The width must never exceed 255 (or whatever unit POI requires, usually `Math.min(calculatedWidth, 255)`). 
-3. Ensure any null values from the JSON parsing are handled gracefully as empty strings `""` before measuring their length.
+1. Replace the "install" argument with "test".
+2. Add the argument "-T" followed by "1C" to enable parallel thread execution.
+3. Add the argument "-Dsurefire.skipAfterFailureCount=1" to make the test suite fail fast.
+4. Ensure the `ProcessBuilder` (or execution logic) correctly separates these arguments.
+5. Keep all existing error handling, output stream reading, and working directory logic exactly the same.
 
 
 
-2. Convert the data from your Section 1 and Section 2 tables into three valid JSON arrays.
-3. **CRITICAL JSON SCHEMA RULE:** You MUST format the JSON arrays using strict camelCase keys, regardless of the markdown headers. 
-   - Use exactly these keys: `dependency`, `currentVersion`, `originalVersion`, `newVersion`, `cves`, `order`, `recipe`. DO NOT use spaces or PascalCase in the JSON keys.
-4. Pass these JSON arrays as arguments, and pass the absolute file path of the current VS Code workspace as the `targetDirectory` parameter.
