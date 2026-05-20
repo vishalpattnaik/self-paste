@@ -1,7 +1,11 @@
- I want to include the name of the service in the generated Excel file's name.
-Goal: Extract the folder name from the `targetDirectory` and prepend it to the Excel filename.
+ Update the `generateExcelReport` tool to parse the project's pom.xml for unchanged direct dependencies.
+Goal: Extract only the direct dependencies from the pom.xml and add them to a 4th Excel sheet.
 Rules:
-1. Parse the `targetDirectory` string to get just the final folder name (e.g., if the path is `/some/path/my-service`, extract "my-service"). You can use `Paths.get(targetDirectory).getFileName().toString()`.
-2. Construct the new file name using that folder name (e.g., `String fileName = folderName + "-remediation-report.xlsx";`).
-3. If you previously added a timestamp to the file name, keep the timestamp, just add the folder name to the front.
-4. Keep all existing Excel generation logic exactly the same.
+1. Create a HashSet of the vulnerable/changed dependency coordinates (groupId:artifactId) from the JSON arrays passed into the tool.
+2. Locate the `pom.xml` file using `Paths.get(targetDirectory, "pom.xml")`.
+3. Use a standard XML parser (like DocumentBuilder or a lightweight regex/SAX parser) to extract the `<dependency>` blocks inside the main `<dependencies>` section of the pom.xml. Do not parse dependencies inside `<dependencyManagement>`.
+4. For each direct dependency, extract the `groupId` and `artifactId`.
+5. If its `groupId:artifactId` is NOT present in the vulnerable HashSet, add it to a list of "Unchanged Direct Dependencies".
+6. Create a 4th sheet in the Excel workbook named "Unchanged Direct Dependencies".
+7. Write these dependencies to the sheet with columns "Group ID", "Artifact ID", and "Version" (extract the version from the pom.xml if present, or leave it as declared).
+8. Apply the same header styling, borders, and column auto-sizing as the other sheets.
