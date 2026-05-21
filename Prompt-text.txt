@@ -1,11 +1,6 @@
- Update the `generateExcelReport` tool to parse the project's pom.xml for unchanged direct dependencies.
-Goal: Extract only the direct dependencies from the pom.xml and add them to a 4th Excel sheet.
-Rules:
-1. Create a HashSet of the vulnerable/changed dependency coordinates (groupId:artifactId) from the JSON arrays passed into the tool.
-2. Locate the `pom.xml` file using `Paths.get(targetDirectory, "pom.xml")`.
-3. Use a standard XML parser (like DocumentBuilder or a lightweight regex/SAX parser) to extract the `<dependency>` blocks inside the main `<dependencies>` section of the pom.xml. Do not parse dependencies inside `<dependencyManagement>`.
-4. For each direct dependency, extract the `groupId` and `artifactId`.
-5. If its `groupId:artifactId` is NOT present in the vulnerable HashSet, add it to a list of "Unchanged Direct Dependencies".
-6. Create a 4th sheet in the Excel workbook named "Unchanged Direct Dependencies".
-7. Write these dependencies to the sheet with columns "Group ID", "Artifact ID", and "Version" (extract the version from the pom.xml if present, or leave it as declared).
-8. Apply the same header styling, borders, and column auto-sizing as the other sheets.
+**Step 2: Fallback to Standard Scan (SBOM)**
+- Automatically locate the SBOM at `target/bom.json`.
+- **IF NOT FOUND:** You must execute the following command directly in the user's terminal:
+  `mvn org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom -DprojectType=library -DschemaVersion=1.6 -DincludeBomSerialNumber=true -DincludeCompileScope=true -DincludeProvidedScope=true -DincludeRuntimeScope=true -DincludeSystemScope=true -DincludeTestScope=false -DoutputFormat=json`
+- **CRITICAL:** Wait until the terminal process completely finishes and prints `BUILD SUCCESS`.
+- Once `target/bom.json` is physically present on disk, call the `scanSbomFile` tool.
