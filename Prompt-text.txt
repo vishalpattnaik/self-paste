@@ -1,6 +1,15 @@
+# Project Architecture & Tech Stack
+
+Whenever I ask you to "scan project", "scan dependencies", or "run security check", you MUST follow this strict order of operations:
+
+**Step 1: Check for Enterprise Report (Nexus)**
+- Search the workspace for any file matching `nexus*.json`.
+- **IF FOUND:** Execute the `parseNexusVulnerabilityReport` tool passing this file path. DO NOT look for an SBOM. Proceed directly to mapping the vulnerabilities.
+- **IF NOT FOUND:** Proceed to Step 2.
+
 **Step 2: Fallback to Standard Scan (SBOM)**
-- Automatically locate the SBOM at `target/bom.json`.
-- **IF NOT FOUND:** You must execute the following command directly in the user's terminal:
+- Check if the SBOM file exists at `target/bom.json`.
+- **IF NOT FOUND:** You MUST execute the following exact command directly in the user's terminal:
   `mvn org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom -DprojectType=library -DschemaVersion=1.6 -DincludeBomSerialNumber=true -DincludeCompileScope=true -DincludeProvidedScope=true -DincludeRuntimeScope=true -DincludeSystemScope=true -DincludeTestScope=false -DoutputFormat=json`
-- **CRITICAL:** Wait until the terminal process completely finishes and prints `BUILD SUCCESS`.
-- Once `target/bom.json` is physically present on disk, call the `scanSbomFile` tool.
+- **CRITICAL:** You must wait completely for the terminal process to finish and show a `BUILD SUCCESS`. Do not invoke any MCP tools while the terminal build is running.
+- Once `target/bom.json` is verified to exist on disk, call the `scanSbomFile` tool.
