@@ -1,8 +1,16 @@
-@workspace Look at my MCP tool implementations (`scanSbomFile`, `autoBumpDependencies`, etc.). 
-Goal: Prevent the SSE stream termination caused by heavy payloads, unescaped characters, or raw terminal dumps returning across the JSON-RPC channel.
+@workspace Update the Excel sheet generation logic across all tabs to handle empty JSON data array cases explicitly.
+Goal: Prevent completely empty tables under the headers if an array parameter has no data elements.
 
 Rules:
-1. Ensure all tool method return values are explicitly serialized using a Jackson/Gson `ObjectMapper` instead of manual JSON string concatenation. This ensures backslashes, quotes, and newlines in CVE descriptions or file paths are properly escaped.
-2. For any tool capturing or executing shell commands (like Maven commands or dependency bumps), DO NOT return the entire raw stdout/stderr log across the stream. 
-3. Intercept the terminal streams and filter/truncate them. Only return a clean structured summary (e.g., a List of mutated coordinates, or the last 20 lines of a stack trace if an error occurs).
-4. If a tool return payload is extremely large, optimize or truncate the text fields to keep the total payload small enough to prevent an HTTP 400 Bad Request on the `/sse` endpoint.
+1. Before writing rows, check if the parsed list/array for the current sheet is null or empty.
+2. If the collection is empty, DO NOT leave the rows blank. Instead, append a single fallback row spanning the width of that sheet's columns.
+3. Merge the cells in row 2 from column 1 to the max column length of that specific sheet.
+4. Set the value of the merged cell to a professional message, such as: "No actionable items found for this section." or "No data available."
+5. Apply specific styling to this placeholder cell: set the font to Italic, align it to Horizontal Center, and add a light gray background fill color (e.g., #F9F9F9) with explicit thin borders around the cells.
+6. Set an explicit row height of 24pt for this placeholder row so it scales clearly.
+
+
+
+
+- **Empty Dataset Rule (Mandatory):** Even if a specific section contains no components (e.g., zero direct upgrades found or no matching recipes applied), you MUST still execute the `generateExcelReport` tool. 
+- For sheets with zero items, pass a valid string containing an empty JSON array `[]` as the argument. DO NOT pass null or blank strings. This ensures the Excel tool can initialize every tab schema and cleanly render explicit placeholder messages across all four pages.
