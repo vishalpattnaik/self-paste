@@ -1,5 +1,1 @@
-**Step 2: Fallback to Standard Scan (SBOM)**
-- Check if the SBOM file exists at `target/bom.json`.
-- **IF NOT FOUND:** You MUST explicitly invoke CMD to bypass PowerShell parsing constraints. Run this exact command string:
-  cmd /c "mvn org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom -DprojectType=library -DschemaVersion=1.6 -DincludeBomSerialNumber=true -DincludeCompileScope=true -DincludeProvidedScope=true -DincludeRuntimeScope=true -DincludeSystemScope=true -DincludeTestScope=false -DoutputFormat=json"
-- Wait for the terminal process to finish and show a `BUILD SUCCESS`.
+- **Strict Non-Interactive Execution:** You must run all terminal and Maven operations in headless batch mode using the `-B` flag. If a process hangs or asks for confirmation, you must append `< NUL` (on Windows) to the command to prevent the 'Terminate batch job' prompt from blocking execution.
