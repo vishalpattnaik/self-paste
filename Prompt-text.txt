@@ -1,1 +1,9 @@
-- **Strict Non-Interactive Execution:** You must run all terminal and Maven operations in headless batch mode using the `-B` flag. If a process hangs or asks for confirmation, you must append `< NUL` (on Windows) to the command to prevent the 'Terminate batch job' prompt from blocking execution.
+@workspace Look at how the vulnerability data list is parsed and mapped for output.
+Goal: Prevent the SSE stream and JSON-RPC channel from crashing ("no response was returned") due to massive text blobs when a component contains dozens of CVEs (like Netty).
+
+Rules:
+1. Locate the logic that extracts or concatenates the list of CVE strings for each vulnerable component.
+2. Implement a truncation safeguard: If a component has more than 5 CVE identifiers, join only the first 5 with commas and append an explicit summary marker like " (and X more)" where X is the remaining count.
+3. Example output structure for large blocks: "CVE-2014-3488, CVE-2015-2156, CVE-2019-16869, CVE-2019-20444, CVE-2019-20445 (and 32 more)"
+4. Ensure this shortened string is what gets populated into the model objects passed to both the markdown UI report and the Excel generation tool.
+5. This dramatically downsizes the JSON payload size, preventing buffer overflows and connection timeouts over the `/sse` stream.
