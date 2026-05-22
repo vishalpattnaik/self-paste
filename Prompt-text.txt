@@ -1,16 +1,6 @@
-@workspace Update the Excel sheet generation logic across all tabs to handle empty JSON data array cases explicitly.
-Goal: Prevent completely empty tables under the headers if an array parameter has no data elements.
-
-Rules:
-1. Before writing rows, check if the parsed list/array for the current sheet is null or empty.
-2. If the collection is empty, DO NOT leave the rows blank. Instead, append a single fallback row spanning the width of that sheet's columns.
-3. Merge the cells in row 2 from column 1 to the max column length of that specific sheet.
-4. Set the value of the merged cell to a professional message, such as: "No actionable items found for this section." or "No data available."
-5. Apply specific styling to this placeholder cell: set the font to Italic, align it to Horizontal Center, and add a light gray background fill color (e.g., #F9F9F9) with explicit thin borders around the cells.
-6. Set an explicit row height of 24pt for this placeholder row so it scales clearly.
-
-
-
-
-- **Empty Dataset Rule (Mandatory):** Even if a specific section contains no components (e.g., zero direct upgrades found or no matching recipes applied), you MUST still execute the `generateExcelReport` tool. 
-- For sheets with zero items, pass a valid string containing an empty JSON array `[]` as the argument. DO NOT pass null or blank strings. This ensures the Excel tool can initialize every tab schema and cleanly render explicit placeholder messages across all four pages.
+**Step 2: Fallback to Standard Scan (SBOM)**
+- Check if the SBOM file exists at `target/bom.json`.
+- **IF NOT FOUND:** You MUST execute the following exact unquoted Maven command string directly in the terminal interface (compatible with both PowerShell and CMD execution):
+  mvn org.cyclonedx:cyclonedx-maven-plugin:1.6.0:makeAggregateBom -DprojectType=library -DschemaVersion=1.6 -DincludeBomSerialNumber=true -DincludeCompileScope=true -DincludeProvidedScope=true -DincludeRuntimeScope=true -DincludeSystemScope=true -DincludeTestScope=false -DoutputFormat=json
+- **CRITICAL:** Do not wrap the individual `-D` arguments in quotes. Execute the entire line as a single, unquoted plain-text string statement.
+- Wait completely for the terminal process to finish and show a `BUILD SUCCESS`.
