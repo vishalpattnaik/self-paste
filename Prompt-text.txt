@@ -1,5 +1,8 @@
-- **UI Table Version Resolution Rule:** When displaying the "Autonomously Upgraded" or "Requires Manual Review" Markdown tables in the chat response:
-  - DO NOT rely on scanning raw terminal stdout/logs to find the Original and New version numbers.
-  - **Original Version:** Look up the exact coordinates inside the project's `pom.xml` file or the input Nexus/SBOM data to find the starting version.
-  - **New Version:** If an upgrade was applied via `autoBumpDependencies`, state the target upgraded version version directly from your execution context.
-  - Never print "(not detected in log)"—always resolve the versions statically by reading the project files directly if terminal output logs are missing or truncated.
+@workspace The `autoBumpDependencies` method is returning a false positive. It currently trusts the Maven process `exit=0` code to assume a dependency was bumped, but the versions plugin returns 0 even when no updates are made.
+
+Update the `autoBumpDependencies` logic with these rules:
+1. Before executing the Maven versions plugin for a specific coordinate, read the target `pom.xml` file into a String or capture its Last-Modified timestamp.
+2. Run the Maven process.
+3. After the process finishes (even if exit=0), re-read the `pom.xml` file.
+4. If the file contents (or timestamp) are EXACTLY the same, the bump FAILED (no update was available). Do NOT add this dependency to the "successfully bumped" list.
+5. Only return the coordinates in the success payload if the `pom.xml` was actually modified. 
