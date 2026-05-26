@@ -1,8 +1,7 @@
-@workspace The `autoBumpDependencies` method is returning a false positive. It currently trusts the Maven process `exit=0` code to assume a dependency was bumped, but the versions plugin returns 0 even when no updates are made.
-
-Update the `autoBumpDependencies` logic with these rules:
-1. Before executing the Maven versions plugin for a specific coordinate, read the target `pom.xml` file into a String or capture its Last-Modified timestamp.
-2. Run the Maven process.
-3. After the process finishes (even if exit=0), re-read the `pom.xml` file.
-4. If the file contents (or timestamp) are EXACTLY the same, the bump FAILED (no update was available). Do NOT add this dependency to the "successfully bumped" list.
-5. Only return the coordinates in the success payload if the `pom.xml` was actually modified. 
+**Step 2: Fallback to Standard Scan (SBOM)**
+- Check if the SBOM file exists at `target/bom.json`.
+- **IF NOT FOUND:** You MUST explicitly invoke CMD to bypass PowerShell parsing constraints. Run this exact command string:
+  cmd /c "mvn cyclonedx:makeAggregateBom"
+- **CRITICAL ASYNC WAIT RULE:** File system I/O takes a few seconds. After the terminal reports `BUILD SUCCESS`, DO NOT immediately abort if `target/bom.json` is missing. 
+- You MUST poll and verify the file exists. If it is not found on the first check, wait a moment and check the `target` directory again. You must retry this file check at least 3 times before declaring a configuration failure.
+- Only proceed to call the `scanSbomFile` tool once you have positively confirmed `target/bom.json` is physically present on disk.
