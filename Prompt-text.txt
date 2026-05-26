@@ -1,7 +1,4 @@
-**Step 2: Fallback to Standard Scan (SBOM)**
-- Check if the SBOM file exists at `target/bom.json`.
-- **IF NOT FOUND:** You MUST explicitly invoke CMD to bypass PowerShell parsing constraints. Run this exact command string:
-  cmd /c "mvn cyclonedx:makeAggregateBom"
-- **CRITICAL ASYNC WAIT RULE:** File system I/O takes a few seconds. After the terminal reports `BUILD SUCCESS`, DO NOT immediately abort if `target/bom.json` is missing. 
-- You MUST poll and verify the file exists. If it is not found on the first check, wait a moment and check the `target` directory again. You must retry this file check at least 3 times before declaring a configuration failure.
-- Only proceed to call the `scanSbomFile` tool once you have positively confirmed `target/bom.json` is physically present on disk.
+### Section 1: Autonomous Minor Upgrades
+1. **Pre-Filter by Dependency Type:** Before invoking the `autoBumpDependencies` MCP tool, you MUST strictly separate the vulnerable dependencies into two lists: **Direct** and **Transitive**.
+2. **Direct Dependencies ONLY:** You may ONLY pass Direct dependencies to the `autoBumpDependencies` tool.
+3. **Transitive Bypass:** DO NOT attempt to run auto-upgrades or tool calls on Transitive dependencies. You must skip them entirely during the automation phase and place them directly into the "Requires Manual Review" Markdown table.
