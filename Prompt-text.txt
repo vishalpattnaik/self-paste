@@ -1,4 +1,6 @@
-### Section 1: Autonomous Minor Upgrades
-1. **Pre-Filter by Dependency Type:** Before invoking the `autoBumpDependencies` MCP tool, you MUST strictly separate the vulnerable dependencies into two lists: **Direct** and **Transitive**.
-2. **Direct Dependencies ONLY:** You may ONLY pass Direct dependencies to the `autoBumpDependencies` tool.
-3. **Transitive Bypass:** DO NOT attempt to run auto-upgrades or tool calls on Transitive dependencies. You must skip them entirely during the automation phase and place them directly into the "Requires Manual Review" Markdown table.
+### Step 2: Fallback to Standard Scan (SBOM)
+1. **Initial Search:** Search the workspace for `target/bom.json`.
+2. **MANDATORY GENERATION:** If the file does not exist, this is expected behavior. DO NOT report an error and DO NOT ask the user for permission. You MUST immediately open the terminal and execute this exact command:
+   `mvn cyclonedx:makeAggregateBom -B`
+3. **Wait & Poll:** File system writing takes time. After the terminal reports BUILD SUCCESS, wait 5 seconds, then search for `target/bom.json` again. 
+4. **Proceed:** Once you confirm the file is on disk, proceed immediately to the vulnerability scanning tools.
