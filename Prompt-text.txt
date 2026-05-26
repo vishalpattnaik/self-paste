@@ -1,8 +1,5 @@
-  "terminal.integrated.profiles.windows": {
-    "Command Prompt": {
-      "path": "C:\\Windows\\System32\\cmd.exe",
-      "args": []
-    }
-  },
-  "terminal.integrated.defaultProfile.windows": "Command Prompt",
-  "terminal.integrated.automationProfile.windows": null
+- **UI Table Version Resolution Rule:** When displaying the "Autonomously Upgraded" or "Requires Manual Review" Markdown tables in the chat response:
+  - DO NOT rely on scanning raw terminal stdout/logs to find the Original and New version numbers.
+  - **Original Version:** Look up the exact coordinates inside the project's `pom.xml` file or the input Nexus/SBOM data to find the starting version.
+  - **New Version:** If an upgrade was applied via `autoBumpDependencies`, state the target upgraded version version directly from your execution context.
+  - Never print "(not detected in log)"—always resolve the versions statically by reading the project files directly if terminal output logs are missing or truncated.
