@@ -1,6 +1,11 @@
-### Step 2: Fallback to Standard Scan (SBOM)
-1. **Initial Search:** Search the workspace for `target/bom.json`.
-2. **MANDATORY GENERATION:** If the file does not exist, this is expected behavior. DO NOT report an error and DO NOT ask the user for permission. You MUST immediately open the terminal and execute this exact command:
-   `mvn cyclonedx:makeAggregateBom -B`
-3. **Wait & Poll:** File system writing takes time. After the terminal reports BUILD SUCCESS, wait 5 seconds, then search for `target/bom.json` again. 
-4. **Proceed:** Once you confirm the file is on disk, proceed immediately to the vulnerability scanning tools.
+@workspace I need to add a strict heuristic gatekeeper to prevent major architectural frameworks from being auto-bumped.
+
+1. Add a `private static final List<String> MAJOR_FRAMEWORKS` containing these exact Regex patterns:
+   - "^org\\.springframework.*"
+   - "^org\\.apache\\.tomcat.*"
+   - "^io\\.netty.*"
+   - "^io\\.grpc.*"
+   - "^org\\.eclipse\\.jetty.*"
+   - "^org\\.hibernate.*"
+2. Create a public method `boolean isSafeToAutoBump(String groupId)`.
+3. The method should evaluate the `groupId` against the `MAJOR_FRAMEWORKS` list. Return `false` if it matches any of the regex patterns (meaning it is a major framework), and `true` if it matches none (meaning it is a safe standalone utility).
