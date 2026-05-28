@@ -1,5 +1,10 @@
-### Section 1: Autonomous Minor Upgrades
-1. **Pass ALL Dependencies to the Tool:** You MUST execute the `autoBumpDependencies` MCP tool for ALL identified vulnerable dependencies, regardless of whether they are Direct or Transitive.
-2. **Trust the Java Gatekeeper:** The `autoBumpDependencies` tool contains internal heuristic gatekeeper logic. It will automatically reject major frameworks (like Spring or Tomcat) and safely inject standalone utilities into `<dependencyManagement>`.
-3. **Handle the Tool Response:** - If the tool returns a "Success" payload (the POM was modified), place the dependency in the "Autonomously Upgraded" table.
-   - If the tool returns a "Failed" or "Skipped" payload (blocked by the gatekeeper), place the dependency in the "Requires Manual Review" table.
+I need to rewrite the POM file modification logic in this method to strictly preserve the original XML formatting, indentation, and comments.
+
+Currently, the code uses standard Java XML DOM parsing (like `DocumentBuilder` or `Transformer`), which is flattening the file and ruining the human-readable layout.
+
+Please replace the DOM parsing logic entirely with a direct String/Regex replacement approach. Apply these rules:
+1. Read the `pom.xml` file into a String using `Files.readString()`.
+2. Write a robust Regex pattern that locates the exact XML block for the target `groupId` and `artifactId`, and captures its `<version>` tags. Ensure the Regex uses `(?s)` or similar flags to account for multi-line formatting, tabs, and spaces between the XML tags.
+3. Use `Matcher.replaceFirst()` to surgically swap out the old version string with the newly patched version, leaving all surrounding whitespace and tags untouched.
+4. Write the modified String back to the file using `Files.writeString()`.
+5. Remove all `javax.xml` DOM imports, DocumentBuilders, and Transformer logic from this method.
