@@ -1,8 +1,8 @@
-Review the `autoBumpDependencies` method. There are two critical logic leaks we need to fix regarding the gatekeeper and XML injection routing.
+@workspace Review this exception handler method. It is currently causing a fatal `HttpMessageNotWritableException` when an error occurs on the MCP Server-Sent Events (SSE) stream because Spring cannot serialize a `Map` to a `text/event-stream` Content-Type.
 
-Update the method with these strict rules:
-1. **Wire up the Gatekeeper:** At the very beginning of the method, you MUST call `isSafeToAutoBump(groupId)`. If it returns false, immediately abort the modification and return: "Skipped: Major Framework. Requires parent POM upgrade."
-2. **Direct vs. Transitive Routing:** Do not force everything into `<dependencyManagement>`. Before modifying the POM, check if the dependency already exists explicitly within the main `<dependencies>` block of the `pom.xml`.
-3. **Direct Update:** If it is a Direct dependency (found in `<dependencies>`), use Regex to update its `<version>` tag exactly where it currently sits.
-4. **Transitive Update:** If it is a Transitive dependency (NOT found in `<dependencies>`), then and only then should you use Regex to inject or update it inside the `<dependencyManagement><dependencies>` block.
-5. **Preserve Formatting:** Continue using the `java.util.regex` String replacement approach. Do not revert to `javax.xml` DOM parsers.
+Please update the method with this routing logic:
+1. Inject `HttpServletRequest request` into the method signature if it is not already present.
+2. Read the request path using `request.getRequestURI()`.
+3. Add a conditional check: If the path contains `/sse`, `/messages`, or matches our MCP endpoint, DO NOT return a `Map`. Instead, return a plain `String` formatted as: `"Internal Server Error: " + e.getMessage()`.
+4. If the path does not match the SSE endpoints, fall back to the existing logic and return the standard JSON `Map` or `ResponseEntity<Map>`.
+5. Ensure the return type of the method is broad enough (like `Object` or `ResponseEntity<?>`) to accommodate returning both Strings and Maps depending on the request type.
