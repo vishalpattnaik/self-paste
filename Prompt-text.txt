@@ -1,8 +1,5 @@
-@workspace Rewrite the `autoBumpDependencies` method to use the new gatekeeper logic and safely handle standalone transitive dependencies.
-
-Apply these strict rules:
-1. First, call `isSafeToAutoBump(groupId)`. If it returns false, instantly skip the execution, do not modify the POM, and return a result indicating: "Skipped: Major Framework. Requires parent POM upgrade."
-2. If it returns true, the tool must enforce the patched version by manipulating the target project's `pom.xml`.
-3. To handle transitive dependencies correctly, implement logic to inject or update the dependency inside the `<dependencyManagement><dependencies>` block of the target `pom.xml`. (Use standard Java XML DOM parsing or robust Regex/String manipulation to achieve this).
-4. Do not blindly trust Maven process exit codes anymore. After attempting the update, read the `pom.xml` file again. 
-5. Only return a "Success" state in the tool's payload if the `pom.xml` file content was physically modified to include the expected new version string. Otherwise, return a "Failed" state.
+### Section 1: Autonomous Minor Upgrades
+1. **Pass ALL Dependencies to the Tool:** You MUST execute the `autoBumpDependencies` MCP tool for ALL identified vulnerable dependencies, regardless of whether they are Direct or Transitive.
+2. **Trust the Java Gatekeeper:** The `autoBumpDependencies` tool contains internal heuristic gatekeeper logic. It will automatically reject major frameworks (like Spring or Tomcat) and safely inject standalone utilities into `<dependencyManagement>`.
+3. **Handle the Tool Response:** - If the tool returns a "Success" payload (the POM was modified), place the dependency in the "Autonomously Upgraded" table.
+   - If the tool returns a "Failed" or "Skipped" payload (blocked by the gatekeeper), place the dependency in the "Requires Manual Review" table.
