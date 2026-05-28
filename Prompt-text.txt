@@ -1,10 +1,7 @@
-I need to rewrite the POM file modification logic in this method to strictly preserve the original XML formatting, indentation, and comments.
+@workspace The dependency bumper tool is accidentally downgrading dependencies because it blindly applies the "fixed version" from the offline database, even if the project's current version is already newer.
 
-Currently, the code uses standard Java XML DOM parsing (like `DocumentBuilder` or `Transformer`), which is flattening the file and ruining the human-readable layout.
-
-Please replace the DOM parsing logic entirely with a direct String/Regex replacement approach. Apply these rules:
-1. Read the `pom.xml` file into a String using `Files.readString()`.
-2. Write a robust Regex pattern that locates the exact XML block for the target `groupId` and `artifactId`, and captures its `<version>` tags. Ensure the Regex uses `(?s)` or similar flags to account for multi-line formatting, tabs, and spaces between the XML tags.
-3. Use `Matcher.replaceFirst()` to surgically swap out the old version string with the newly patched version, leaving all surrounding whitespace and tags untouched.
-4. Write the modified String back to the file using `Files.writeString()`.
-5. Remove all `javax.xml` DOM imports, DocumentBuilders, and Transformer logic from this method.
+Update the replacement logic to explicitly prevent downgrades:
+1. Import `org.apache.maven.artifact.versioning.ComparableVersion`. (Add maven-artifact to the pom if necessary).
+2. Before modifying the pom.xml, parse both the `currentVersion` (extracted from the POM) and the `suggestedNewVersion` using `ComparableVersion`.
+3. Compare them. If `suggestedNewVersion.compareTo(currentVersion) <= 0`, abort the replacement.
+4. Return a failure payload stating: "Skipped: The suggested fix version is a downgrade or identical to the current version. This is likely a scanner false positive."
