@@ -1,11 +1,8 @@
-@workspace I need to add a strict heuristic gatekeeper to prevent major architectural frameworks from being auto-bumped.
+@workspace Rewrite the `autoBumpDependencies` method to use the new gatekeeper logic and safely handle standalone transitive dependencies.
 
-1. Add a `private static final List<String> MAJOR_FRAMEWORKS` containing these exact Regex patterns:
-   - "^org\\.springframework.*"
-   - "^org\\.apache\\.tomcat.*"
-   - "^io\\.netty.*"
-   - "^io\\.grpc.*"
-   - "^org\\.eclipse\\.jetty.*"
-   - "^org\\.hibernate.*"
-2. Create a public method `boolean isSafeToAutoBump(String groupId)`.
-3. The method should evaluate the `groupId` against the `MAJOR_FRAMEWORKS` list. Return `false` if it matches any of the regex patterns (meaning it is a major framework), and `true` if it matches none (meaning it is a safe standalone utility).
+Apply these strict rules:
+1. First, call `isSafeToAutoBump(groupId)`. If it returns false, instantly skip the execution, do not modify the POM, and return a result indicating: "Skipped: Major Framework. Requires parent POM upgrade."
+2. If it returns true, the tool must enforce the patched version by manipulating the target project's `pom.xml`.
+3. To handle transitive dependencies correctly, implement logic to inject or update the dependency inside the `<dependencyManagement><dependencies>` block of the target `pom.xml`. (Use standard Java XML DOM parsing or robust Regex/String manipulation to achieve this).
+4. Do not blindly trust Maven process exit codes anymore. After attempting the update, read the `pom.xml` file again. 
+5. Only return a "Success" state in the tool's payload if the `pom.xml` file content was physically modified to include the expected new version string. Otherwise, return a "Failed" state.
