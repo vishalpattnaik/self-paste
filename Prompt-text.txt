@@ -1,8 +1,6 @@
-@workspace Review this exception handler method. It is currently causing a fatal `HttpMessageNotWritableException` when an error occurs on the MCP Server-Sent Events (SSE) stream because Spring cannot serialize a `Map` to a `text/event-stream` Content-Type.
+@workspace We need to fix an LLM hallucination in the reporting workflow. The agent is currently ignoring "Skipped" or "Failed" responses from the POM modification tool and incorrectly injecting those dependencies into the `directUpgradesJson` payload for the `generateExcelReport` tool.
 
-Please update the method with this routing logic:
-1. Inject `HttpServletRequest request` into the method signature if it is not already present.
-2. Read the request path using `request.getRequestURI()`.
-3. Add a conditional check: If the path contains `/sse`, `/messages`, or matches our MCP endpoint, DO NOT return a `Map`. Instead, return a plain `String` formatted as: `"Internal Server Error: " + e.getMessage()`.
-4. If the path does not match the SSE endpoints, fall back to the existing logic and return the standard JSON `Map` or `ResponseEntity<Map>`.
-5. Ensure the return type of the method is broad enough (like `Object` or `ResponseEntity<?>`) to accommodate returning both Strings and Maps depending on the request type.
+Please update the Java code to enforce a strict contract:
+1. Update the POM modification tool to ensure its return string always starts with a strict keyword: either "SUCCESS:" or "SKIPPED:".
+2. Modify the description/documentation string of the `generateExcelReport` MCP tool to include this exact instruction:
+"CRITICAL ROUTING RULE: You must strictly evaluate the return string from the POM modification tool. If the response starts with 'SUCCESS:', place the dependency in the directUpgradesJson array. If the response starts with 'SKIPPED:' or indicates any failure (e.g., identical version, Artifactory miss, framework block), you MUST place that dependency into the manualReviewJson array. Do not assume success."
