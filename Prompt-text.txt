@@ -1,5 +1,10 @@
-We recently changed the OpenRewrite recipe collection from a List<String> to a Set<String> (to deduplicate recipes), but now the code fails to compile because the downstream execution method or Maven command builder is still strictly expecting a List<String>.
+ We need to refactor the `autoBumpDependencies` MCP tool to act as a deterministic gatekeeper. The Java backend must autonomously verify that the bumped dependency actually exists in our enterprise Artifactory before reporting success to the LLM.
 
-Please fix the type mismatch by doing one of the following:
-1. Update the downstream method signature to accept a `Collection<String>` or `Set<String>` instead of a `List<String>`.
-2. OR, if the downstream method cannot be changed, wrap the deduplicated Set back into a List right before passing it to the executor (e.g., `new ArrayList<>(deduplicatedRecipeSet)`).
+Please update the Java method to implement this exact transaction lifecycle:
+1. Create a backup: Read the original content of the `pom.xml` into a String variable (or copy it to a temp file) before making any modifications.
+2. Apply the change: Inject the newly requested dependency version into the POM file.
+3. Verify via ProcessBuilder: Execute a lightweight Maven validation command: `mvn dependency:resolve -DincludeGroupIds=[insert-groupId-here] -B -q` (run this from the project directory).
+4. Evaluate the Exit Code: Wait for the process to finish. 
+5. Commit or Rollback: 
+   - If the exit code is 0 (Success): Keep the modified POM and return a string starting exactly with "SUCCESS:".
+   - If the exit code is non-zero (Artifactory block): Catch the failure, overwrite the `pom.xml` with the original backup content to restore the build, and return a string starting exactly with "SKIPPED: Version not found in enterprise Artifactory, rolled back POM."
