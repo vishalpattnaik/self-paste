@@ -1,6 +1,5 @@
-@workspace We need to fix an LLM hallucination in the reporting workflow. The agent is currently ignoring "Skipped" or "Failed" responses from the POM modification tool and incorrectly injecting those dependencies into the `directUpgradesJson` payload for the `generateExcelReport` tool.
+@workspace We need to fix a critical performance bug in the OpenRewrite orchestration logic. Currently, if multiple Spring dependencies (like spring-boot-starter-web and spring-boot-starter-data-jpa) are flagged for CVEs, the engine adds the same umbrella recipe (e.g., UpgradeSpringBoot_3_0) to a List, causing the heavy AST parser to execute redundantly.
 
-Please update the Java code to enforce a strict contract:
-1. Update the POM modification tool to ensure its return string always starts with a strict keyword: either "SUCCESS:" or "SKIPPED:".
-2. Modify the description/documentation string of the `generateExcelReport` MCP tool to include this exact instruction:
-"CRITICAL ROUTING RULE: You must strictly evaluate the return string from the POM modification tool. If the response starts with 'SUCCESS:', place the dependency in the directUpgradesJson array. If the response starts with 'SKIPPED:' or indicates any failure (e.g., identical version, Artifactory miss, framework block), you MUST place that dependency into the manualReviewJson array. Do not assume success."
+Please refactor the recipe collection logic:
+1. Change the collection structure from a `List<String>` to a `Set<String>` (specifically a `LinkedHashSet` if we need to preserve insertion order) to automatically deduplicate the recipes.
+2. Ensure that the final Maven command execution for OpenRewrite only receives this deduplicated set of recipes, guaranteeing that each unique recipe runs exactly once per build.
