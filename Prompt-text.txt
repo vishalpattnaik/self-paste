@@ -1,5 +1,5 @@
-@workspace We need to fix a critical performance bug in the OpenRewrite orchestration logic. Currently, if multiple Spring dependencies (like spring-boot-starter-web and spring-boot-starter-data-jpa) are flagged for CVEs, the engine adds the same umbrella recipe (e.g., UpgradeSpringBoot_3_0) to a List, causing the heavy AST parser to execute redundantly.
+We recently changed the OpenRewrite recipe collection from a List<String> to a Set<String> (to deduplicate recipes), but now the code fails to compile because the downstream execution method or Maven command builder is still strictly expecting a List<String>.
 
-Please refactor the recipe collection logic:
-1. Change the collection structure from a `List<String>` to a `Set<String>` (specifically a `LinkedHashSet` if we need to preserve insertion order) to automatically deduplicate the recipes.
-2. Ensure that the final Maven command execution for OpenRewrite only receives this deduplicated set of recipes, guaranteeing that each unique recipe runs exactly once per build.
+Please fix the type mismatch by doing one of the following:
+1. Update the downstream method signature to accept a `Collection<String>` or `Set<String>` instead of a `List<String>`.
+2. OR, if the downstream method cannot be changed, wrap the deduplicated Set back into a List right before passing it to the executor (e.g., `new ArrayList<>(deduplicatedRecipeSet)`).
