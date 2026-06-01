@@ -1,1 +1,9 @@
-24,junit,4.x,org.openrewrite.java.testing.junit5.JUnit4to5Migration,org.openrewrite.recipe:rewrite-testing-frameworks:3.35.2
+ I need to update the vulnerability filtering logic to respect our enterprise custom parent POM architecture. Currently, the scanner is trying to bump versions or run recipes for dependencies whose versions are strictly managed by our custom parent POM, which breaks the build.
+
+Please implement a "Strict Local Version" filter before a CVE is allowed to trigger an Auto-Bump or an OpenRewrite recipe:
+1. Parse the target project's local `pom.xml`.
+2. Locate the vulnerable dependency's `groupId` and `artifactId` within the file.
+3. Check if that specific dependency block contains an explicit `<version>` tag (or if its version is defined via a local `<properties>` tag in this exact file).
+4. If the dependency is completely missing (a deep transitive) OR it exists but has no `<version>` tag (meaning the version is inherited from our custom parent), ignore it entirely. Flag it as "SKIPPED: Managed by Parent/Transitive" and push it to the manual review bucket.
+5. Only proceed with execution if the dependency is explicitly declared AND has a local version override.
+
