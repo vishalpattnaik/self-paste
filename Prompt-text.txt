@@ -1,9 +1,11 @@
- I need to update the vulnerability filtering logic to respect our enterprise custom parent POM architecture. Currently, the scanner is trying to bump versions or run recipes for dependencies whose versions are strictly managed by our custom parent POM, which breaks the build.
+We need to fix the CVE filtering logic. The previous rule was too aggressive and accidentally blocked the auto-bump feature for standalone transitive dependencies (like log4j or postgresql). 
 
-Please implement a "Strict Local Version" filter before a CVE is allowed to trigger an Auto-Bump or an OpenRewrite recipe:
-1. Parse the target project's local `pom.xml`.
-2. Locate the vulnerable dependency's `groupId` and `artifactId` within the file.
-3. Check if that specific dependency block contains an explicit `<version>` tag (or if its version is defined via a local `<properties>` tag in this exact file).
-4. If the dependency is completely missing (a deep transitive) OR it exists but has no `<version>` tag (meaning the version is inherited from our custom parent), ignore it entirely. Flag it as "SKIPPED: Managed by Parent/Transitive" and push it to the manual review bucket.
-5. Only proceed with execution if the dependency is explicitly declared AND has a local version override.
+Please decouple the filtering logic into two distinct execution paths:
 
+1. FOR AUTO-BUMP (Standalone CVEs with NO OpenRewrite recipe): 
+Revert to the original behavior. The system MUST allow auto-bumping of transitives and dependencies inherited from the parent. (The tool should force the fix by injecting the patched version into the local `<dependencyManagement>` block or `<properties>` block).
+
+2. FOR OPENREWRITE (CVEs that DO match a CSV recipe): 
+Apply the strict safety filter ONLY here. Before adding a recipe to the execution queue, check if the vulnerable dependency triggering it is a deep transitive. If the dependency is purely transitive (not explicitly declared as a direct dependency in the pom.xml), DO NOT run the OpenRewrite recipe. Mark the recipe as skipped.
+
+This ensures standalone transitives get patched locally, while protecting the build from massive framework rewrites triggered by hidden transitives.
