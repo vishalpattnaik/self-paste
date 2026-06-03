@@ -1,11 +1,8 @@
-We need to fix the CVE filtering logic. The previous rule was too aggressive and accidentally blocked the auto-bump feature for standalone transitive dependencies (like log4j or postgresql). 
+@workspace We need to revert the previous split-logic and enforce a strict "Direct Dependencies Only" rule across the entire scanner. My team has decided that we must NEVER auto-bump or rewrite transitive dependencies, as local overrides cause conflicts with our core enterprise parent POMs.
 
-Please decouple the filtering logic into two distinct execution paths:
-
-1. FOR AUTO-BUMP (Standalone CVEs with NO OpenRewrite recipe): 
-Revert to the original behavior. The system MUST allow auto-bumping of transitives and dependencies inherited from the parent. (The tool should force the fix by injecting the patched version into the local `<dependencyManagement>` block or `<properties>` block).
-
-2. FOR OPENREWRITE (CVEs that DO match a CSV recipe): 
-Apply the strict safety filter ONLY here. Before adding a recipe to the execution queue, check if the vulnerable dependency triggering it is a deep transitive. If the dependency is purely transitive (not explicitly declared as a direct dependency in the pom.xml), DO NOT run the OpenRewrite recipe. Mark the recipe as skipped.
-
-This ensures standalone transitives get patched locally, while protecting the build from massive framework rewrites triggered by hidden transitives.
+Please refactor the filtering logic for ALL vulnerabilities (both Auto-Bump and OpenRewrite) to follow this single, strict rule:
+1. Parse the target project's local `pom.xml`.
+2. Check if the vulnerable dependency is explicitly declared inside the local `<dependencies>` block.
+3. If the dependency is NOT physically written in the local `pom.xml` (meaning it is a transitive dependency inherited from a parent or another library), ignore it completely. 
+4. Flag it as "SKIPPED: Transitive dependency - must be resolved via parent/core framework" and push it directly to the manual review report.
+5. Only execute an Auto-Bump or an OpenRewrite recipe if the dependency is a DIRECT dependency explicitly present in the existing `pom.xml`.
