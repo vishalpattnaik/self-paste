@@ -1,8 +1,11 @@
-@workspace We need to revert the previous split-logic and enforce a strict "Direct Dependencies Only" rule across the entire scanner. My team has decided that we must NEVER auto-bump or rewrite transitive dependencies, as local overrides cause conflicts with our core enterprise parent POMs.
+2. **STRICT DIRECT DEPENDENCY RULE:** For the remaining vulnerabilities lacking a CSV recipe, categorize them by strictly checking the project's local `pom.xml`:
+   - **Direct:** The dependency is explicitly written in the `pom.xml`.
+   - **Transitive/Managed:** The dependency is NOT explicitly written in the `pom.xml` (inherited from the enterprise parent POM or another library).
+3. **Filter and Execute:** 
+   - You MUST ONLY execute the `autoBumpDependencies` MCP tool for **Direct** dependencies. 
+   - You MUST NEVER execute tools for **Transitive/Managed** dependencies. Do not attempt to add them to `<dependencyManagement>`. Immediately flag them as "SKIPPED: Transitive dependency - must be resolved via core parent framework" and place them directly in the "Requires Manual Review" table.
 
-Please refactor the filtering logic for ALL vulnerabilities (both Auto-Bump and OpenRewrite) to follow this single, strict rule:
-1. Parse the target project's local `pom.xml`.
-2. Check if the vulnerable dependency is explicitly declared inside the local `<dependencies>` block.
-3. If the dependency is NOT physically written in the local `pom.xml` (meaning it is a transitive dependency inherited from a parent or another library), ignore it completely. 
-4. Flag it as "SKIPPED: Transitive dependency - must be resolved via parent/core framework" and push it directly to the manual review report.
-5. Only execute an Auto-Bump or an OpenRewrite recipe if the dependency is a DIRECT dependency explicitly present in the existing `pom.xml`.
+
+
+
+1. **STRICT DIRECT DEPENDENCY RULE:** If any vulnerable dependencies map to a recipe in the CSV, verify they are DIRECT dependencies explicitly written in the local `pom.xml`. If they are transitive/managed, SKIP the recipe entirely and move them to Manual Review. If they are Direct, gather the recipe names.
