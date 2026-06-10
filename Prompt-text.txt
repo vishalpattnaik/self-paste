@@ -1,12 +1,11 @@
-@workspace Now, implement the Interactive REPL terminal. 
+@workspace I noticed a gap in the `SecurityPipelineOrchestrator`. Currently, it only looks for `nexus.json`. My original pipeline had a fallback mechanism to read CycloneDX SBOMs if the Nexus report was missing.
 
-1. Modify the main Spring Boot application class (the one annotated with `@SpringBootApplication`).
-2. Make it implement `CommandLineRunner`.
-3. Inject the `SecurityPipelineOrchestrator` via constructor.
-4. In the `run(String... args)` method, implement a continuous `while(true)` loop using `java.util.Scanner(System.in)`.
-5. Print a welcome banner. 
-6. Prompt the user: "security-cli> Enter the absolute path to the project to scan (or type 'exit' to quit):".
-7. If the user types 'exit', `break` the loop and let the application shut down cleanly.
-8. Validate that the input is a valid directory path. If invalid, print an error and `continue` the loop.
-9. If valid, pass the path to `securityPipelineOrchestrator.runPipeline(input)`. 
-10. Catch all exceptions inside the loop, print the error message, and ensure the loop continues so the application stays awake for the next project.
+Please update the `runPipeline(String targetProjectPath)` method to implement this fallback logic:
+1. Define both potential report paths: 
+   - `File nexusFile = new File(targetProjectPath, "target/nexus.json");` (or check for files matching `nexus*.json`).
+   - `File sbomFile = new File(targetProjectPath, "target/bom.json");`
+2. Implement an `if/else` check:
+   - IF the Nexus file exists, call the Nexus parsing service to extract the CVEs.
+   - ELSE IF the Nexus file is missing but `bom.json` exists, call the existing SBOM parsing service to extract the CVEs.
+   - ELSE throw a clear `FileNotFoundException` or log an error stating: "[ERROR] Neither nexus.json nor bom.json found in the target directory." and `return` early so the REPL loops back to the prompt.
+3. Ensure the extracted CVE list from either source flows seamlessly into the next step (the Direct Dependency Filter).
