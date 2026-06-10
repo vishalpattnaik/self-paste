@@ -1,11 +1,12 @@
-@workspace Create a new `@Service` class named `SecurityPipelineOrchestrator`. This class will replace the AI agent and orchestrate the entire scan sequentially.
+@workspace Now, implement the Interactive REPL terminal. 
 
-Create a public method: `public void runPipeline(String targetProjectPath)`.
-Implement this exact sequence inside the method:
-1. Construct the paths for the target: `nexus.json` and `pom.xml` based on the `targetProjectPath` argument.
-2. Call the existing service to parse the `nexus.json` file to get the list of CVEs.
-3. **THE DIRECT DEPENDENCY FILTER:** Parse the target's `pom.xml` `<dependencies>` block into a List. Filter the CVE list: Keep ONLY vulnerabilities where the `groupId` and `artifactId` explicitly exist in the target's `pom.xml`. Ignore all deep transitives.
-4. Loop through the filtered direct CVEs. For those without recipes, call the Auto-Bump service sequentially.
-5. For those with CSV recipes, execute the OpenRewrite service.
-6. Finally, execute the Excel generation service to output the report to the `targetProjectPath`.
-Include proper `log.info` and `log.error` statements for each step so the user can see the progress in the terminal.
+1. Modify the main Spring Boot application class (the one annotated with `@SpringBootApplication`).
+2. Make it implement `CommandLineRunner`.
+3. Inject the `SecurityPipelineOrchestrator` via constructor.
+4. In the `run(String... args)` method, implement a continuous `while(true)` loop using `java.util.Scanner(System.in)`.
+5. Print a welcome banner. 
+6. Prompt the user: "security-cli> Enter the absolute path to the project to scan (or type 'exit' to quit):".
+7. If the user types 'exit', `break` the loop and let the application shut down cleanly.
+8. Validate that the input is a valid directory path. If invalid, print an error and `continue` the loop.
+9. If valid, pass the path to `securityPipelineOrchestrator.runPipeline(input)`. 
+10. Catch all exceptions inside the loop, print the error message, and ensure the loop continues so the application stays awake for the next project.
