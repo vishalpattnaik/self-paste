@@ -1,7 +1,5 @@
-@workspace I am refactoring this application from an MCP Server/Web API into a standalone Interactive Java CLI tool. 
+@workspace Locate all methods in my service classes that were previously exposed to the AI (e.g., parsing the Nexus report, auto-bumping dependencies, running OpenRewrite, generating Excel).
 
-Please perform the following cleanup:
-1. Open the `pom.xml`. Remove any dependencies related to `spring-boot-starter-web`, `spring-boot-starter-webflux`, `spring-ai`, or MCP (Model Context Protocol).
-2. Ensure `spring-boot-starter` is still present so we can use Core Spring DI, but add `<properties><spring-boot.mainclass>...</spring-boot.mainclass></properties>` if necessary.
-3. Delete the configuration classes related to MCP (e.g., `WebMvcSseServerTransportProvider`, or any `@RestController` handling AI endpoints).
-4. Do not touch the existing Excel generation, Maven process execution, or JSON parsing logic. We still need those.
+1. Remove any AI-specific annotations (like `@Tool` or `@Description`).
+2. Ensure these methods are standard `public` methods inside their respective `@Service` classes.
+3. Update their return types. Instead of returning formatted Markdown strings or Tool response payloads for an LLM, modify them to return standard Java objects (like `List<Vulnerability>`, `boolean` for success, or custom DTOs) so they can pass data directly to each other in Java memory.
