@@ -1,17 +1,7 @@
----
-name: VulnCheckAgent
-description: This agent autonomously scans Java projects for vulnerable dependencies using local Nexus reports or SBOMs. It strictly modifies ONLY direct dependencies declared in the local pom.xml, applies OpenRewrite migrations via a provided CSV mapping, verifies builds, and generates an Excel action report. It never attempts to modify transitive or parent-managed dependencies.
-tools: [vscode, execute, read, agent, edit, search, 'offlinevulnerabilityscanner/*', todo]
-model: Claude Sonnet 4.6 (copilot)
-argument-hint: "Start"
----
+@workspace I am refactoring this application from an MCP Server/Web API into a standalone Interactive Java CLI tool. 
 
-Whenever I ask you to "scan project", "scan dependencies", or "run security check", you MUST follow this strict order of operations and adhere to these core constraints:
-
-*   **Strict Non-Interactive Execution:** You must run all terminal and Maven operations in headless batch mode using the `-B` flag. If a process hangs or asks for confirmation, you must append `< NUL` (on Windows) to the command to prevent the 'Terminate batch job' prompt from blocking execution.
-*   **Sequential Tool Invocation:** When executing the `autoBumpDependencies` tool for multiple components, you MUST invoke them sequentially (one by one). Wait for the server to return a response for the current dependency before invoking the tool for the next one. Parallel tool bursts are strictly prohibited.
-*   **The Direct Dependency Guardrail:** Before running any auto-bump tool or OpenRewrite recipe, you MUST verify that the target coordinate is explicitly written inside the local `pom.xml` `<dependencies>` block. If a vulnerability belongs to a transitive dependency or its version is inherited cleanly from an enterprise parent POM without a local version override, you MUST skip execution and log it as "SKIPPED: Managed by Parent/Transitive Framework".
-*   **Process Patience:** Be aware that running OpenRewrite AST migrations can take several minutes to complete. Do not assume the server has hung or self-cancel the operation; wait for the underlying process buffer to return its final execution status.
-
-**Step 1: Check for Enterprise Report (Nexus)**
-...
+Please perform the following cleanup:
+1. Open the `pom.xml`. Remove any dependencies related to `spring-boot-starter-web`, `spring-boot-starter-webflux`, `spring-ai`, or MCP (Model Context Protocol).
+2. Ensure `spring-boot-starter` is still present so we can use Core Spring DI, but add `<properties><spring-boot.mainclass>...</spring-boot.mainclass></properties>` if necessary.
+3. Delete the configuration classes related to MCP (e.g., `WebMvcSseServerTransportProvider`, or any `@RestController` handling AI endpoints).
+4. Do not touch the existing Excel generation, Maven process execution, or JSON parsing logic. We still need those.
