@@ -1,34 +1,6 @@
-<packaging>maven-plugin</packaging>
+@workspace We are finalizing the transition to a pure Maven Plugin. Please make the following exact changes to the `pom.xml`:
 
-<dependencies>
-    <dependency>
-        <groupId>org.apache.maven</groupId>
-        <artifactId>maven-plugin-api</artifactId>
-        <version>3.8.1</version>
-        <scope>provided</scope>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.maven.plugin-tools</groupId>
-        <artifactId>maven-plugin-annotations</artifactId>
-        <version>3.6.4</version>
-        <scope>provided</scope>
-    </dependency>
-</dependencies>
-
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-plugin-plugin</artifactId>
-            <version>3.6.4</version>
-        </plugin>
-
-        <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-            <configuration>
-                <classifier>exec</classifier>
-            </configuration>
-        </plugin>
-    </build>
-</build>
+1. Change the `<artifactId>` to exactly: `cve-maven-plugin`. (This is critical to unlock the 'cve' command prefix).
+2. Ensure `<packaging>maven-plugin</packaging>` is set.
+3. Completely DELETE the `spring-boot-maven-plugin` block from the `<build><plugins>` section. We do not want to build an executable executable Fat JAR anymore; we need a standard library JAR.
+4. Ensure `maven-plugin-api` and `maven-plugin-annotations` are still present in the dependencies.
