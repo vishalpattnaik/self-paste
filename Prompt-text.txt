@@ -1,6 +1,56 @@
-We are abandoning the Interactive REPL CLI and converting this project purely into a Maven Plugin. 
+package com.scpa.cve; // Use your actual package name
 
-Please modify the main Spring Boot application class (the one annotated with `@SpringBootApplication`):
-1. Remove the `CommandLineRunner` interface implementation.
-2. Delete the `run(String... args)` method entirely, including the `while(true)` loop and the `Scanner(System.in)`.
-3. The class should now just be a standard, empty Spring Boot entry point containing only `public static void main(String[] args) { SpringApplication.run(...); }`.
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.springframework.boot.Banner;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ConfigurableApplicationContext;
+import java.io.File;
+
+@Mojo(name = "scan", defaultPhase = LifecyclePhase.VERIFY, threadSafe = true)
+public class CveScannerMojo extends AbstractMojo {
+
+    // Automatically tracks the directory of whichever microservice is running this plugin
+    @Parameter(defaultValue = "${project.basedir}", readonly = true, required = true)
+    private File projectBaseDir;
+
+    @Parameter(property = "cve.skip", defaultValue = "false")
+    private boolean skip;
+
+    @Override
+    public void execute() throws MojoExecutionException, MojoFailureException {
+        if (skip) {
+            getLog().info("CVE Scanner execution skipped via configuration.");
+            return;
+        }
+
+        getLog().info("==================================================");
+        getLog().info("   Executing Embedded SCPA Security Guardrail    ");
+        getLog().info("==================================================");
+
+        // Bootstrap your existing Spring application context programmatically without starting a web server
+        try (ConfigurableApplicationContext context = new SpringApplicationBuilder(CveScannerApplication.class)
+                .web(WebApplicationType.NONE)
+                .bannerMode(Banner.Mode.OFF)
+                .logStartupInfo(false)
+                .run()) {
+
+            // Retrieve your orchestrator directly from the bootstrapped context
+            SecurityPipelineOrchestrator orchestrator = context.getBean(SecurityPipelineOrchestrator.class);
+            
+            // Execute the deterministic scanning and patching logic
+            orchestrator.runPipeline(projectBaseDir.getAbsolutePath());
+
+            getLog().info("[SUCCESS] Scan and auto-remediation completed.");
+
+        } catch (Exception e) {
+            getLog().error("Critical failure during embedded CVE scan execution", e);
+            throw new MojoFailureException("Vulnerability guardrail failed: " + e.getMessage());
+        }
+    }
+}
