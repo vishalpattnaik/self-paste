@@ -1,11 +1,6 @@
-@workspace I noticed a gap in the `SecurityPipelineOrchestrator`. Currently, it only looks for `nexus.json`. My original pipeline had a fallback mechanism to read CycloneDX SBOMs if the Nexus report was missing.
+We are abandoning the Interactive REPL CLI and converting this project purely into a Maven Plugin. 
 
-Please update the `runPipeline(String targetProjectPath)` method to implement this fallback logic:
-1. Define both potential report paths: 
-   - `File nexusFile = new File(targetProjectPath, "target/nexus.json");` (or check for files matching `nexus*.json`).
-   - `File sbomFile = new File(targetProjectPath, "target/bom.json");`
-2. Implement an `if/else` check:
-   - IF the Nexus file exists, call the Nexus parsing service to extract the CVEs.
-   - ELSE IF the Nexus file is missing but `bom.json` exists, call the existing SBOM parsing service to extract the CVEs.
-   - ELSE throw a clear `FileNotFoundException` or log an error stating: "[ERROR] Neither nexus.json nor bom.json found in the target directory." and `return` early so the REPL loops back to the prompt.
-3. Ensure the extracted CVE list from either source flows seamlessly into the next step (the Direct Dependency Filter).
+Please modify the main Spring Boot application class (the one annotated with `@SpringBootApplication`):
+1. Remove the `CommandLineRunner` interface implementation.
+2. Delete the `run(String... args)` method entirely, including the `while(true)` loop and the `Scanner(System.in)`.
+3. The class should now just be a standard, empty Spring Boot entry point containing only `public static void main(String[] args) { SpringApplication.run(...); }`.
