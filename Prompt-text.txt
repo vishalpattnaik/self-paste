@@ -1,8 +1,13 @@
-@workspace We need to add a manual override flag to this Maven Plugin so developers can force an update of the offline CVE database using `-Dcve.update=true`.
+@workspace We are upgrading this offline parser to use a persistent local cache with a time-based "soft warning" and integrating the manual CLI override flag.
 
-Please modify this class with the following changes:
-1. Add a new Maven parameter: `@Parameter(property = "cve.update", defaultValue = "false") private boolean forceUpdate;`
-2. In the `execute()` method, before booting the Spring Application Context, check if `forceUpdate` is true. 
-3. If it is true, inject it into the JVM properties using `System.setProperty("cve.force.update", "true");` and add a `getLog().info()` stating that a manual database rebuild was triggered.
-4. If false, set the property to "false".
-5. Wrap the Spring Context execution in a `try-finally` block. In the `finally` block, ensure you call `System.clearProperty("cve.force.update");` so the flag doesn't leak into other Maven plugins running in the same terminal session.
+Please refactor this class with the following requirements:
+1. Update the SQLite connection string variable to use an absolute path in the user's home directory: `@Value("${user.home}/.scpa-security/nvd_offline_database.sqlite?journal_mode=WAL") private String dbPathString;`
+2. Add a variable to catch the JVM property passed by the Mojo: `@Value("${cve.force.update:false}") private boolean forceUpdate;`
+3. Refactor the `@PostConstruct` (or initialization) method to check for a companion file named `last_updated.txt` located in the same directory as the SQLite database.
+4. Implement this exact flow:
+   - IF `forceUpdate` is true: Delete the existing SQLite and txt files, run the 8-minute JSON parsing logic, and write the current `Instant.now()` to `last_updated.txt`.
+   - IF the SQLite or txt files are missing: Run the 8-minute parsing logic and write the timestamp.
+   - IF they exist, calculate the age in days between the timestamp and `Instant.now()`.
+   - IF the age is > 7 days: Do NOT block the thread or rebuild. Just print a highly visible `log.warn` telling the user the database is X days old and they should run the Maven command with `-Dcve.update=true`. Then proceed with the fast boot.
+   - IF the age is <= 7 days: Print a `log.info` that the database is fresh, and fast-boot instantly.
+5. Extract the actual database deletion, JSON parsing, and timestamp writing into a separate private helper method (e.g., `rebuildDatabase()`) to keep the initialization method clean. Use `java.nio.file.Files` and `java.time.Instant` for file and time operations.
