@@ -1,1 +1,8 @@
-spring.datasource.url=jdbc:sqlite:${user.home}/.scpa-security/nvd_offline_database.sqlite?journal_mode=WAL
+@workspace We need to add a manual override flag to this Maven Plugin so developers can force an update of the offline CVE database using `-Dcve.update=true`.
+
+Please modify this class with the following changes:
+1. Add a new Maven parameter: `@Parameter(property = "cve.update", defaultValue = "false") private boolean forceUpdate;`
+2. In the `execute()` method, before booting the Spring Application Context, check if `forceUpdate` is true. 
+3. If it is true, inject it into the JVM properties using `System.setProperty("cve.force.update", "true");` and add a `getLog().info()` stating that a manual database rebuild was triggered.
+4. If false, set the property to "false".
+5. Wrap the Spring Context execution in a `try-finally` block. In the `finally` block, ensure you call `System.clearProperty("cve.force.update");` so the flag doesn't leak into other Maven plugins running in the same terminal session.
