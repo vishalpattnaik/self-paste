@@ -1,13 +1,7 @@
-@workspace We are upgrading this offline parser to use a persistent local cache with a time-based "soft warning" and integrating the manual CLI override flag.
+@workspace I need to update my CSV parsing logic to respect the "order" column so recipes execute deterministically.
 
-Please refactor this class with the following requirements:
-1. Update the SQLite connection string variable to use an absolute path in the user's home directory: `@Value("${user.home}/.scpa-security/nvd_offline_database.sqlite?journal_mode=WAL") private String dbPathString;`
-2. Add a variable to catch the JVM property passed by the Mojo: `@Value("${cve.force.update:false}") private boolean forceUpdate;`
-3. Refactor the `@PostConstruct` (or initialization) method to check for a companion file named `last_updated.txt` located in the same directory as the SQLite database.
-4. Implement this exact flow:
-   - IF `forceUpdate` is true: Delete the existing SQLite and txt files, run the 8-minute JSON parsing logic, and write the current `Instant.now()` to `last_updated.txt`.
-   - IF the SQLite or txt files are missing: Run the 8-minute parsing logic and write the timestamp.
-   - IF they exist, calculate the age in days between the timestamp and `Instant.now()`.
-   - IF the age is > 7 days: Do NOT block the thread or rebuild. Just print a highly visible `log.warn` telling the user the database is X days old and they should run the Maven command with `-Dcve.update=true`. Then proceed with the fast boot.
-   - IF the age is <= 7 days: Print a `log.info` that the database is fresh, and fast-boot instantly.
-5. Extract the actual database deletion, JSON parsing, and timestamp writing into a separate private helper method (e.g., `rebuildDatabase()`) to keep the initialization method clean. Use `java.nio.file.Files` and `java.time.Instant` for file and time operations.
+Please modify the highlighted code with these exact changes:
+1. Update the `RecipeRow` record to include `int order` as its first parameter.
+2. In the `loadRecipes()` method, inside the `for (CSVRecord row : csvParser)` loop, extract the order column using `Integer.parseInt(row.get("order").trim())`.
+3. Pass this parsed order integer into the new `RecipeRow` constructor.
+4. After the `while` loop finishes building the `rows` list, sort the list by the `order` property in ascending order before returning it (e.g., `rows.sort(Comparator.comparingInt(RecipeRow::order))`).
