@@ -1,6 +1,6 @@
-I want to prevent the heavy offline NVD database from loading when running this manual upgrade goal. 
+I want to intercept the "nvd.init.skip" system property to bypass the database initialization routine during manual framework upgrades.
 
-Please modify the highlighted `execute()` method to do the following:
-1. Immediately before booting the `SpringApplicationBuilder`, add `System.setProperty("nvd.init.skip", "true");`.
-2. Wrap the entire Spring application runtime context lifecycle (the `try-with-resources` block) in a standard `try-finally` block.
-3. Inside the `finally` block, ensure that the system property is cleanly removed using `System.clearProperty("nvd.init.skip");` to avoid leaking the configuration to subsequent Maven execution threads.
+Please modify the highlighted code with these changes:
+1. Add a new private boolean field named `skipNvdInit`. Use the Spring `@Value` annotation to map it to the property: `@Value("${nvd.init.skip:false}")`.
+2. Navigate to the very first line of the initialization method (the method marked with `@PostConstruct` that handles loading or building the SQLite database).
+3. Insert a guard condition at the top: if `skipNvdInit` is true, log an info message like "[FAST BOOT] Bypassing NVD Database initialization for manual upgrade mode." and execute an immediate return statement to exit the method before any database connection or processing occurs.
