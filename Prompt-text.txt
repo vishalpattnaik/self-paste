@@ -1,11 +1,43 @@
-@workspace I need to replace the ProcessBuilder logic in `runSingleRecipe` with the native OpenRewrite in-memory Java API.
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ConfigurableApplicationContext;
+import java.io.File;
 
-Please rewrite this highlighted method completely with the following implementation:
-1. Keep the method signature exactly the same: `private boolean runSingleRecipe(Path projectPath, String recipeName)`.
-2. Construct the path to the target pom: `Path targetPomPath = projectPath.resolve("pom.xml");` and return false if it doesn't exist.
-3. Initialize an `InMemoryExecutionContext`: `ExecutionContext ctx = new InMemoryExecutionContext(t -> log.error("OpenRewrite error: ", t));`
-4. Load the recipe from the classpath: `Recipe recipe = Environment.builder().scanRuntimeClasspath().build().activateRecipes(recipeName);`
-5. Parse the target pom.xml into a List of SourceFiles: `List<SourceFile> parsedPom = MavenParser.builder().build().parse(Collections.singletonList(targetPomPath), projectPath, ctx).toList();`
-6. Execute the recipe: `RecipeRun recipeRun = recipe.run(parsedPom, ctx);`
-7. Iterate through `recipeRun.getResults()`. If a result contains changes (`result.getAfter() != null`), write the modified string (`result.getAfter().printAll()`) back to `targetPomPath` using `Files.writeString()`.
-8. Return `true` if changes were written, or `false` if `recipeRun.getResults()` was empty. Use your existing `log.info` and `log.error` structures to wrap this in a try-catch block.
+@Mojo(name = "upgrade", threadSafe = true)
+public class UpgradeMojo extends AbstractMojo {
+
+    @Parameter(defaultValue = "${project.basedir}", readonly = true, required = true)
+    private File projectBaseDir;
+
+    // This captures the exact recipe the developer wants to run
+    @Parameter(property = "recipe", required = true)
+    private String recipeName;
+
+    @Override
+    public void execute() {
+        getLog().info("Starting intentional tech-debt upgrade...");
+        getLog().info("Target Recipe: " + recipeName);
+
+        try (ConfigurableApplicationContext context = new SpringApplicationBuilder(CveScannerApplication.class)
+                .logStartupInfo(false)
+                .run()) {
+            
+            // Bypass the Orchestrator and CVE DB completely!
+            // Just call your existing execution service directly.
+            OpenRewriteExecutionService rewriteService = context.getBean(OpenRewriteExecutionService.class);
+            
+            boolean success = rewriteService.executeRecipe(projectBaseDir.getAbsolutePath(), recipeName);
+            
+            if (success) {
+                getLog().info("Upgrade complete. Please review the changes and run 'mvn clean test'.");
+            } else {
+                getLog().info("No changes were necessary for this upgrade.");
+            }
+
+        } catch (Exception e) {
+            getLog().error("Upgrade failed: " + e.getMessage());
+        }
+    }
+}
