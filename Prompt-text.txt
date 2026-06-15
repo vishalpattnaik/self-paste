@@ -1,43 +1,6 @@
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.context.ConfigurableApplicationContext;
-import java.io.File;
+I want to prevent the heavy offline NVD database from loading when running this manual upgrade goal. 
 
-@Mojo(name = "upgrade", threadSafe = true)
-public class UpgradeMojo extends AbstractMojo {
-
-    @Parameter(defaultValue = "${project.basedir}", readonly = true, required = true)
-    private File projectBaseDir;
-
-    // This captures the exact recipe the developer wants to run
-    @Parameter(property = "recipe", required = true)
-    private String recipeName;
-
-    @Override
-    public void execute() {
-        getLog().info("Starting intentional tech-debt upgrade...");
-        getLog().info("Target Recipe: " + recipeName);
-
-        try (ConfigurableApplicationContext context = new SpringApplicationBuilder(CveScannerApplication.class)
-                .logStartupInfo(false)
-                .run()) {
-            
-            // Bypass the Orchestrator and CVE DB completely!
-            // Just call your existing execution service directly.
-            OpenRewriteExecutionService rewriteService = context.getBean(OpenRewriteExecutionService.class);
-            
-            boolean success = rewriteService.executeRecipe(projectBaseDir.getAbsolutePath(), recipeName);
-            
-            if (success) {
-                getLog().info("Upgrade complete. Please review the changes and run 'mvn clean test'.");
-            } else {
-                getLog().info("No changes were necessary for this upgrade.");
-            }
-
-        } catch (Exception e) {
-            getLog().error("Upgrade failed: " + e.getMessage());
-        }
-    }
-}
+Please modify the highlighted `execute()` method to do the following:
+1. Immediately before booting the `SpringApplicationBuilder`, add `System.setProperty("nvd.init.skip", "true");`.
+2. Wrap the entire Spring application runtime context lifecycle (the `try-with-resources` block) in a standard `try-finally` block.
+3. Inside the `finally` block, ensure that the system property is cleanly removed using `System.clearProperty("nvd.init.skip");` to avoid leaking the configuration to subsequent Maven execution threads.
