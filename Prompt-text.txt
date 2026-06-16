@@ -1,26 +1,9 @@
-@workspace I want to change this Mojo from accepting a manual recipe string to acting as an autonomous tech-debt upgrade engine.
+@workspace I need to refactor this method into a "Two-Pass" execution architecture. Before matching against the CSV, we need to apply a global patch-level dependency bump using OpenRewrite's native recipe class.
 
-Please modify this class with these exact changes:
-1. Delete the `@Parameter(property = "recipe", required = true) private String recipeName;` field.
-2. In the `execute()` method, remove the log statement that prints the `recipeName`.
-3. Change the execution call from `rewriteService.executeRecipe(projectBaseDir.getAbsolutePath(), recipeName);` to a new method we are about to create: `boolean success = rewriteService.executeProactiveUpgrades(projectBaseDir.toPath());`
-4. Update the log messages to reflect an "Autonomous Ordered Tech-Debt Upgrade" rather than a manual recipe target.
-
-
-
-@workspace I need to add an autonomous, deterministic upgrade engine to this service that matches project dependencies against our ordered CSV catalog.
-
-Please add the following methods to this class:
-1. Add a private helper method: `private Set<String> extractArtifactIdsFromPom(Path pomPath)`. 
-   - Inside this method, use standard Java `javax.xml.parsers.DocumentBuilderFactory` to parse the `pom.xml` file.
-   - Extract the text content of all `<artifactId>` tags across the entire document.
-   - Convert them to lowercase and return them as a `Set<String>`. Catch and log any XML parsing exceptions.
-2. Add a public method: `public boolean executeProactiveUpgrades(Path projectPath)`.
-   - Resolve the "pom.xml" path. If it doesn't exist, log an error and return false.
-   - Call `extractArtifactIdsFromPom` to get the list of artifacts currently used in the project.
-   - Call our existing `loadRecipes()` method to get the list of `RecipeRow` objects (which is already sorted by the `order` column).
-   - Iterate through the sorted `RecipeRow` list. 
-   - For each row, check if the `artifactId` Set contains `row.artifactName()`.
-   - If it does, log an info message (e.g., "[MATCH] Found matching artifact '{name}'. Queuing upgrade recipe: {recipe}").
-   - Call our existing `runSingleRecipe(projectPath, row.recipeName())` method.
-   - Keep track of whether any changes were made and return a final boolean indicating if any upgrades were successfully applied.
+Please refactor `executeProactiveUpgrades(Path projectPath)` with this exact flow:
+1. Pass 1 (The Baseline Bump): Programmatically instantiate the OpenRewrite recipe `org.openrewrite.maven.UpgradeDependencyVersion`. Set the constructor arguments to match everything but restrict the version jump: `groupId` = "*", `artifactId` = "*", and `newVersion` = "latest.patch". Provide null or false for the remaining parameters as required by the constructor.
+2. Initialize an `InMemoryExecutionContext` and parse the target `pom.xml` using `MavenParser.builder().build()`.
+3. Run the instantiated `UpgradeDependencyVersion` recipe against the parsed POM. 
+4. If changes are detected (`result.getAfter() != null`), write the modified POM back to disk using `Files.writeString` and log: "[PRE-PROCESSING] Globally bumped all dependencies to latest patch versions."
+5. Pass 2 (The Targeted Upgrades): Now that the baseline is secure, call our `extractArtifactIdsFromPom(projectPath)` method to read the freshly updated `pom.xml`.
+6. Execute the existing CSV matching loop, sorting the `RecipeRow` objects and running `runSingleRecipe` for any matching artifacts in strict priority order.
