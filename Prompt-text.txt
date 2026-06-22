@@ -1,9 +1,13 @@
-@workspace I need to refactor this method into a "Two-Pass" execution architecture. Before matching against the CSV, we need to apply a global patch-level dependency bump using OpenRewrite's native recipe class.
-
-Please refactor `executeProactiveUpgrades(Path projectPath)` with this exact flow:
-1. Pass 1 (The Baseline Bump): Programmatically instantiate the OpenRewrite recipe `org.openrewrite.maven.UpgradeDependencyVersion`. Set the constructor arguments to match everything but restrict the version jump: `groupId` = "*", `artifactId` = "*", and `newVersion` = "latest.patch". Provide null or false for the remaining parameters as required by the constructor.
-2. Initialize an `InMemoryExecutionContext` and parse the target `pom.xml` using `MavenParser.builder().build()`.
-3. Run the instantiated `UpgradeDependencyVersion` recipe against the parsed POM. 
-4. If changes are detected (`result.getAfter() != null`), write the modified POM back to disk using `Files.writeString` and log: "[PRE-PROCESSING] Globally bumped all dependencies to latest patch versions."
-5. Pass 2 (The Targeted Upgrades): Now that the baseline is secure, call our `extractArtifactIdsFromPom(projectPath)` method to read the freshly updated `pom.xml`.
-6. Execute the existing CSV matching loop, sorting the `RecipeRow` objects and running `runSingleRecipe` for any matching artifacts in strict priority order.
+<plugin>
+    <groupId>com.google.cloud.tools</groupId>
+    <artifactId>jib-maven-plugin</artifactId>
+    <version>3.4.0</version>
+    <configuration>
+        <from>
+            <image>openjdk:17-slim</image> 
+        </from>
+        <to>
+            <image>my-microservice:local-test</image>
+        </to>
+    </configuration>
+</plugin>
